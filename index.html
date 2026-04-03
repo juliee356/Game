@@ -2,332 +2,405 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>لعبة الدجاجة</title>
+<title>CRYPTON GAME</title>
+
 <style>
-/* الصفحة الرئيسية والخلفية */
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Arial;
   text-align: center;
   background: linear-gradient(to bottom, #6dd5fa, #ffffff);
 }
 
-/* الحاوية */
-.container { 
-  padding: 20px; 
+.logo {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #ff6347;
 }
 
-/* صفحات اللعبة والتسجيل */
-#login, #game { 
-  display: none; 
+.section {
+  background: #ffffffcc;
+  margin: 20px auto;
+  padding: 15px;
+  border-radius: 15px;
+  width: 95%;
 }
 
-/* المدخلات والأزرار */
+.divider {
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #ff7f50, transparent);
+  margin: 20px auto;
+}
+
 input, button {
-  padding: 12px 20px;
-  margin: 10px;
-  border-radius: 12px;
+  padding: 10px;
+  margin: 5px;
+  border-radius: 10px;
   border: none;
-  font-size: 16px;
-  outline: none;
-  transition: 0.3s;
 }
 
-input {
-  width: 250px;
-  background-color: #f0f4f8;
-  color: #333;
-}
-
-input:focus {
-  background-color: #e0e8f0;
-  box-shadow: 0 0 5px #66ccff;
-}
-
-/* الأزرار */
 button {
   background: #ff7f50;
   color: white;
   cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
 }
 
-button:hover {
-  background: #ff6347;
-  transform: translateY(-2px);
-}
-
-/* canvas */
 canvas {
-  border-radius: 10px;
-  display: block;
   margin: 10px auto;
+  display: block;
 }
 
-/* أقسام الإيداع والسحب والHistory والContact */
-#deposit, #withdraw, #history, #contact {
-  margin-top: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* محافظ */
+.wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
 }
 
-/* الجداول */
+.wallet-box {
+  padding: 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.copy-btn {
+  margin-top: 5px;
+  background: black;
+  color: white;
+  font-size: 12px;
+  padding: 5px;
+  border-radius: 6px;
+}
+
+.btc { background:#f7931a; }
+.doge { background:#c2a633; }
+.trx { background:#ef0027; }
+.usdt { background:#26a17b; }
+.bnb { background:#f3ba2f; color:black;}
+.ltc { background:#345c9c; }
+
 table {
   border-collapse: collapse;
-  margin-top: 10px;
-  width: 80%;
+  width: 90%;
+  margin: auto;
 }
 th, td {
   border: 1px solid #444;
   padding: 5px;
-  text-align: center;
-  background-color: #ffffff80;
-  border-radius: 5px;
 }
-th {
-  background-color: #ffa50080;
+
+#loginPage, #gamePage { display: none; }
+
+/* تأثيرات */
+.flash-green { background:#a0ffb0 !important; }
+.flash-red { background:#ffaaaa !important; }
+
+.popup {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 120px;
+  font-size: 22px;
+  animation: fadeUp 1s ease forwards;
+}
+
+@keyframes fadeUp {
+  0% {opacity:1;}
+  100% {opacity:0; transform:translate(-50%,-40px);}
 }
 </style>
 </head>
+
 <body>
 
-<!-- صفحة التسجيل -->
-<div id="login" class="container">
-  <h2 style="color:#ff6347; font-size:28px; font-weight:bold;">🎮 تسجيل الدخول للعبة الدجاجة</h2>
-  <input type="email" id="email" placeholder="ادخل ايميلك" required>
-  <br>
-  <button onclick="login()">دخول</button>
+<div class="logo">CRYPTON</div>
+
+<div id="loginPage">
+  <div class="section">
+    <h2>تسجيل الدخول</h2>
+    <input type="email" id="emailInput" placeholder="ادخل ايميلك">
+    <br>
+    <button onclick="login()">دخول</button>
+  </div>
 </div>
 
-<!-- صفحة اللعبة -->
-<div id="game" class="container">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-    <h3 id="userEmail">👤</h3>
+<div id="gamePage">
+
+<div class="section">
+  <div style="display:flex; justify-content:space-between;">
+    <h3 id="userEmail"></h3>
     <h3>الرصيد: <span id="balance">0</span>$</h3>
     <div>
-      <button onclick="togglePause()">⏸/▶️</button>
-      <button onclick="logout()">🚪 خروج</button>
+      <button onclick="togglePause()">⏸</button>
+      <button onclick="logout()">🚪</button>
     </div>
   </div>
 
   <canvas id="gameCanvas" width="400" height="300"></canvas>
   <button onclick="jump()">⬆ قفز</button>
+</div>
 
-  <div id="deposit">
-    <h3 style="color:#2e8b57;">إيداع</h3>
-    <p id="depositAddress" style="color:#333; font-weight:bold;">0xfc9782ab90f8667ffb38235ec8d527a543bfcdc2</p>
-    <button onclick="copyAddress()">نسخ العنوان</button>
-  </div>
+<div class="divider"></div>
 
-  <div id="withdraw">
-    <h3 style="color:#2e8b57;">سحب</h3>
-    <input id="wallet" placeholder="عنوان المحفظة">
-    <input id="amount" type="number" placeholder="المبلغ">
-    <button onclick="withdraw()">سحب</button>
-  </div>
+<div class="section">
+  <h3>💸 السحب</h3>
+  <input id="walletInput" placeholder="عنوان المحفظة">
+  <input id="amountInput" type="number" placeholder="المبلغ">
+  <button onclick="withdraw()">سحب</button>
 
-  <div id="history">
-    <h3 style="color:#2e8b57;">History</h3>
-    <table id="historyTable">
-      <tr>
-        <th>المبلغ</th>
-        <th>العنوان</th>
-        <th>Status</th>
-      </tr>
-    </table>
-  </div>
+  <h3>📊 History</h3>
+  <table id="historyTable">
+    <tr>
+      <th>المبلغ</th>
+      <th>العنوان</th>
+      <th>Status</th>
+    </tr>
+  </table>
+</div>
 
-  <div id="contact">
-    <h3 style="color:#2e8b57;">Contact Team Work</h3>
-    <p>Email address: <a href="mailto:hayatmoneyfree@gmail.com">hayatmoneyfree@gmail.com</a></p>
+<div class="divider"></div>
+
+<div class="section">
+  <h3>💰 الإيداع</h3>
+  <div class="wallet-grid">
+
+    <div class="wallet-box btc">
+      BTC<br>
+      <span id="btc">16EG8BtfW54uFpsjHEht3Ae4fiv7sWUsz2</span>
+      <button class="copy-btn" onclick="copyText('btc')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box doge">
+      DOGE<br>
+      <span id="doge">DPWZTTxU18GAFG5xxNizPnpazehWNx6ZVp</span>
+      <button class="copy-btn" onclick="copyText('doge')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box trx">
+      TRX<br>
+      <span id="trx">TVPuBE8JqdyhtMfsg85kgV1SRwPS1grW8W</span>
+      <button class="copy-btn" onclick="copyText('trx')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box usdt">
+      USDT TRC20<br>
+      <span id="usdt1">TVPuBE8JqdyhtMfsg85kgV1SRwPS1grW8W</span>
+      <button class="copy-btn" onclick="copyText('usdt1')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box usdt">
+      USDT BEP20<br>
+      <span id="usdt2">0xFb8ce63C13F3028ea1B8d8a4A873E71580B9A25D</span>
+      <button class="copy-btn" onclick="copyText('usdt2')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box usdt">
+      USDT POL<br>
+      <span id="usdt3">0xC40C82dF9cFAf3F8063FDEa2f5bb0BD12ee518A6</span>
+      <button class="copy-btn" onclick="copyText('usdt3')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box bnb">
+      BNB<br>
+      <span id="bnb">0xFb8ce63C13F3028ea1B8d8a4A873E71580B9A25D</span>
+      <button class="copy-btn" onclick="copyText('bnb')">📋 نسخ</button>
+    </div>
+
+    <div class="wallet-box ltc">
+      LTC<br>
+      <span id="ltc">ltc1q3h3xqjewyuxun0m8l2x4959vpm3qf8egkp3wwl</span>
+      <button class="copy-btn" onclick="copyText('ltc')">📋 نسخ</button>
+    </div>
+
   </div>
 </div>
 
+<div class="divider"></div>
+
+<div class="section">
+  <h3>📩 تواصل مع مشرف الموقع</h3>
+  <p>Email: hayatmoneyfree@gmail.com</p>
+</div>
+
+</div>
+
 <script>
-// الأصوات
-const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3");
-const hitSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.wav");
+let chicken={x:50,y:200,vy:0,jumping:false};
+let boxes=[];
+let gravity=0.5;
+let speed=2;
+let paused=false;
+let frameCount=0;
 
-// تسجيل الدخول
-window.onload = function(){
-  let email = localStorage.getItem("email");
-  let balanceStored = Number(localStorage.getItem("balance"));
-  if(!balanceStored || balanceStored <= 0) localStorage.setItem("balance",1);
+const winSound=new Audio("https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3");
+const loseSound=new Audio("https://assets.mixkit.co/sfx/preview/mixkit-losing-bleeps-2026.mp3");
 
-  if(email){
-    startGame();
-  } else {
-    document.getElementById("login").style.display = "block";
-  }
+function popup(text,color){
+  let p=document.createElement("div");
+  p.className="popup";
+  p.style.color=color;
+  p.innerText=text;
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),1000);
+}
+
+function flash(type){
+  document.body.classList.add(type);
+  setTimeout(()=>document.body.classList.remove(type),200);
+}
+
+function copyText(id){
+  let text=document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text);
+  popup("تم النسخ","black");
+}
+
+const loginPage=document.getElementById("loginPage");
+const gamePage=document.getElementById("gamePage");
+
+window.onload=function(){
+  let email=localStorage.getItem("email");
+  if(email) startGame();
+  else loginPage.style.display="block";
 };
 
 function login(){
-  let emailInput = document.getElementById("email").value.trim();
-  if(emailInput === ""){
-    alert("ادخل الايميل أولاً");
-    return;
-  }
-  localStorage.setItem("email", emailInput);
+  let e=emailInput.value;
+  if(!e) return alert("ادخل ايميل");
+  localStorage.setItem("email",e);
   localStorage.setItem("balance",1);
   startGame();
 }
 
 function logout(){
-  localStorage.removeItem("email");
-  document.getElementById("game").style.display = "none";
-  document.getElementById("login").style.display = "block";
+  localStorage.clear();
+  location.reload();
 }
 
-// اللعبة
-let balance = 1;
-let chicken = { x:50, y:200, vy:0, jumping:false, radius:25, angle:0 };
-let boxes = [];
-let speed = 2;
-let gravity = 0.5;
-let paused = false;
-let skyOffset = 0;
-
 function startGame(){
-  document.getElementById("login").style.display = "none";
-  document.getElementById("game").style.display = "block";
-  document.getElementById("userEmail").innerText = "👤 " + localStorage.getItem("email");
+  loginPage.style.display="none";
+  gamePage.style.display="block";
+  userEmail.innerText=localStorage.getItem("email");
   updateBalance();
-  gameLoop();
+  loop();
 }
 
 function updateBalance(){
-  balance = Number(localStorage.getItem("balance"));
-  document.getElementById("balance").innerText = balance.toFixed(2);
+  balance.innerText=Number(localStorage.getItem("balance")).toFixed(2);
 }
 
 function jump(){
-  if(!chicken.jumping && !paused){
-    chicken.vy = -15;
-    chicken.jumping = true;
-    jumpSound.play();
+  if(!chicken.jumping){
+    chicken.vy=-18;
+    chicken.jumping=true;
   }
 }
-document.addEventListener("keydown", function(e){
-  if(e.code === "Space") jump();
-});
 
 function createBox(){
-  if(boxes.length > 0){
-    let lastBox = boxes[boxes.length-1];
-    if(lastBox.x > 280) return;
-  }
-  let value = (Math.random()*0.87 + 0.45).toFixed(2);
-  boxes.push({ x:400, y:230, value:Number(value), radius:20, vy:0 });
+  if(boxes.length && boxes[boxes.length-1].x>300) return;
+  let v=(Math.random()*0.87+0.45).toFixed(2);
+  boxes.push({x:400,y:230,val:Number(v)});
 }
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
-function drawBackground(){
-  skyOffset += 0.2;
-  let gradient = ctx.createLinearGradient(0,0,0,300);
-  let r = Math.floor(135 + 20*Math.sin(skyOffset/50));
-  let g = Math.floor(206 + 20*Math.sin(skyOffset/50));
-  let b = Math.floor(235 + 20*Math.sin(skyOffset/50));
-  gradient.addColorStop(0, `rgb(${r},${g},${b})`);
-  gradient.addColorStop(1, `rgb(70,195,206)`);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0,0,400,300);
-}
-
-function gameLoop(){
+function loop(){
   if(!paused){
-    drawBackground();
+    frameCount++;
+    ctx.clearRect(0,0,400,300);
 
-    ctx.fillStyle = "#654321";
+    ctx.fillStyle="#70c5ce";
+    ctx.fillRect(0,0,400,300);
+
+    ctx.fillStyle="#654321";
     ctx.fillRect(0,250,400,50);
 
-    chicken.vy += gravity;
-    chicken.y += chicken.vy;
-    chicken.angle = chicken.vy / 20;
-    if(chicken.y > 200){ chicken.y = 200; chicken.vy = 0; chicken.jumping = false; chicken.angle=0;}
+    chicken.vy+=gravity;
+    chicken.y+=chicken.vy;
 
-    ctx.save();
-    ctx.translate(chicken.x + chicken.radius, chicken.y + chicken.radius);
-    ctx.rotate(chicken.angle);
+    if(chicken.y>200){
+      chicken.y=200;
+      chicken.vy=0;
+      chicken.jumping=false;
+    }
+
     ctx.beginPath();
-    ctx.arc(0, 0, chicken.radius, 0, 2*Math.PI);
-    ctx.fillStyle = "yellow";
+    ctx.arc(chicken.x+25,chicken.y+25,25,0,2*Math.PI);
+    ctx.fillStyle="yellow";
     ctx.fill();
-    ctx.closePath();
-    ctx.restore();
 
-    if(Math.random() < 0.02) createBox();
+    if(Math.random()<0.02) createBox();
 
-    boxes.forEach((box,i)=>{
-      box.x -= speed;
-      box.vy += gravity;
-      box.y += box.vy;
-      if(box.y > 230) box.y = 230, box.vy = 0;
+    boxes.forEach((b,i)=>{
+      b.x-=speed;
 
-      ctx.strokeStyle = "#FF0000AA";
-      ctx.lineWidth = 2;
+      let color=`hsl(${b.val*200},70%,50%)`;
+      ctx.fillStyle=color;
       ctx.beginPath();
-      ctx.moveTo(chicken.x+chicken.radius, chicken.y+chicken.radius);
-      ctx.lineTo(box.x, box.y);
-      ctx.stroke();
-      ctx.closePath();
-
-      let colorValue = Math.floor(255 - ((box.value-0.45)/0.87)*150); 
-      ctx.fillStyle = `rgb(${colorValue}, ${100+colorValue/2}, 0)`;
-      ctx.beginPath();
-      ctx.arc(box.x, box.y, box.radius, 0, 2*Math.PI);
+      ctx.arc(b.x,b.y,20,0,2*Math.PI);
       ctx.fill();
-      ctx.closePath();
 
-      ctx.fillStyle = "white";
-      ctx.fillText(box.value.toFixed(2), box.x-10, box.y+5);
+      ctx.fillStyle="white";
+      ctx.fillText(b.val,b.x-10,b.y+5);
 
-      if(chicken.x + chicken.radius*2 > box.x - box.radius &&
-         chicken.x < box.x + box.radius &&
-         chicken.y + chicken.radius*2 >= box.y - box.radius &&
-         chicken.y <= box.y + box.radius){
-        balance *= box.value;
-        hitSound.play();
-        localStorage.setItem("balance", balance);
+      // اصطدام مباشر فقط
+      if(
+        chicken.x+50 > b.x-15 &&
+        chicken.x < b.x+15 &&
+        chicken.y+50 > b.y-10 &&
+        chicken.y < b.y+10
+      ){
+        let bal=Number(localStorage.getItem("balance"));
+
+        if(b.val>1){
+          popup("💰 ربح","green");
+          flash("flash-green");
+          winSound.play();
+        } else {
+          popup("⚠️ خسارة","red");
+          flash("flash-red");
+          loseSound.play();
+        }
+
+        bal*=b.val;
+        localStorage.setItem("balance",bal);
         updateBalance();
-        box.vy = -10;
         boxes.splice(i,1);
       }
     });
 
-    speed += 0.0005;
+    // زيادة السرعة تدريجياً كل 600 فريم (تقريباً 10 ثواني)
+    if(frameCount%600===0) speed+=0.2;
   }
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(loop);
 }
 
-function togglePause(){ paused = !paused; }
+function togglePause(){ paused=!paused; }
 
 function withdraw(){
-  let amount = Number(document.getElementById("amount").value);
-  let wallet = document.getElementById("wallet").value.trim();
-  if(amount>0 && amount<=balance){
-    balance -= amount;
-    localStorage.setItem("balance", balance);
+  let amt=Number(amountInput.value);
+  let wal=walletInput.value;
+  let bal=Number(localStorage.getItem("balance"));
+
+  if(amt>0 && amt<=bal){
+    bal-=amt;
+    localStorage.setItem("balance",bal);
     updateBalance();
 
-    const table = document.getElementById("historyTable");
-    const row = table.insertRow(-1);
-    const cellAmount = row.insertCell(0);
-    const cellWallet = row.insertCell(1);
-    const cellStatus = row.insertCell(2);
-    cellAmount.innerText = amount.toFixed(2);
-    cellWallet.innerText = wallet;
-    cellStatus.innerText = "Sent";
-    alert("تم السحب");
-  } else alert("رصيد غير كافي");
-}
-
-function copyAddress(){
-  navigator.clipboard.writeText("0xfc9782ab90f8667ffb38235ec8d527a543bfcdc2");
-  alert("تم نسخ العنوان");
+    let row=historyTable.insertRow();
+    row.insertCell(0).innerText=amt;
+    row.insertCell(1).innerText=wal;
+    row.insertCell(2).innerText="Sent";
+  } else {
+    alert("رصيد غير كافي");
+  }
 }
 </script>
 
