@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>لعبة الدجاجة</title>
+<style>
+/* الصفحة الرئيسية والخلفية */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-align: center;
+  background: linear-gradient(to bottom, #6dd5fa, #ffffff);
+}
+
+/* الحاوية */
+.container { 
+  padding: 20px; 
+}
+
+/* صفحات اللعبة والتسجيل */
+#login, #game { 
+  display: none; 
+}
+
+/* المدخلات والأزرار */
+input, button {
+  padding: 12px 20px;
+  margin: 10px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s;
+}
+
+input {
+  width: 250px;
+  background-color: #f0f4f8;
+  color: #333;
+}
+
+input:focus {
+  background-color: #e0e8f0;
+  box-shadow: 0 0 5px #66ccff;
+}
+
+/* الأزرار */
+button {
+  background: #ff7f50;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #ff6347;
+  transform: translateY(-2px);
+}
+
+/* canvas */
+canvas {
+  border-radius: 10px;
+  display: block;
+  margin: 10px auto;
+}
+
+/* أقسام الإيداع والسحب والHistory والContact */
+#deposit, #withdraw, #history, #contact {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* الجداول */
+table {
+  border-collapse: collapse;
+  margin-top: 10px;
+  width: 80%;
+}
+th, td {
+  border: 1px solid #444;
+  padding: 5px;
+  text-align: center;
+  background-color: #ffffff80;
+  border-radius: 5px;
+}
+th {
+  background-color: #ffa50080;
+}
+</style>
+</head>
+<body>
+
+<!-- صفحة التسجيل -->
+<div id="login" class="container">
+  <h2 style="color:#ff6347; font-size:28px; font-weight:bold;">🎮 تسجيل الدخول للعبة الدجاجة</h2>
+  <input type="email" id="email" placeholder="ادخل ايميلك" required>
+  <br>
+  <button onclick="login()">دخول</button>
+</div>
+
+<!-- صفحة اللعبة -->
+<div id="game" class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <h3 id="userEmail">👤</h3>
+    <h3>الرصيد: <span id="balance">0</span>$</h3>
+    <div>
+      <button onclick="togglePause()">⏸/▶️</button>
+      <button onclick="logout()">🚪 خروج</button>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas" width="400" height="300"></canvas>
+  <button onclick="jump()">⬆ قفز</button>
+
+  <div id="deposit">
+    <h3 style="color:#2e8b57;">إيداع</h3>
+    <p id="depositAddress" style="color:#333; font-weight:bold;">0xfc9782ab90f8667ffb38235ec8d527a543bfcdc2</p>
+    <button onclick="copyAddress()">نسخ العنوان</button>
+  </div>
+
+  <div id="withdraw">
+    <h3 style="color:#2e8b57;">سحب</h3>
+    <input id="wallet" placeholder="عنوان المحفظة">
+    <input id="amount" type="number" placeholder="المبلغ">
+    <button onclick="withdraw()">سحب</button>
+  </div>
+
+  <div id="history">
+    <h3 style="color:#2e8b57;">History</h3>
+    <table id="historyTable">
+      <tr>
+        <th>المبلغ</th>
+        <th>العنوان</th>
+        <th>Status</th>
+      </tr>
+    </table>
+  </div>
+
+  <div id="contact">
+    <h3 style="color:#2e8b57;">Contact Team Work</h3>
+    <p>Email address: <a href="mailto:hayatmoneyfree@gmail.com">hayatmoneyfree@gmail.com</a></p>
+  </div>
+</div>
+
+<script>
+// الأصوات
+const jumpSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3");
+const hitSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-arcade-mechanical-bling-210.wav");
+
+// تسجيل الدخول
+window.onload = function(){
+  let email = localStorage.getItem("email");
+  let balanceStored = Number(localStorage.getItem("balance"));
+  if(!balanceStored || balanceStored <= 0) localStorage.setItem("balance",1);
+
+  if(email){
+    startGame();
+  } else {
+    document.getElementById("login").style.display = "block";
+  }
+};
+
+function login(){
+  let emailInput = document.getElementById("email").value.trim();
+  if(emailInput === ""){
+    alert("ادخل الايميل أولاً");
+    return;
+  }
+  localStorage.setItem("email", emailInput);
+  localStorage.setItem("balance",1);
+  startGame();
+}
+
+function logout(){
+  localStorage.removeItem("email");
+  document.getElementById("game").style.display = "none";
+  document.getElementById("login").style.display = "block";
+}
+
+// اللعبة
+let balance = 1;
+let chicken = { x:50, y:200, vy:0, jumping:false, radius:25, angle:0 };
+let boxes = [];
+let speed = 2;
+let gravity = 0.5;
+let paused = false;
+let skyOffset = 0;
+
+function startGame(){
+  document.getElementById("login").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  document.getElementById("userEmail").innerText = "👤 " + localStorage.getItem("email");
+  updateBalance();
+  gameLoop();
+}
+
+function updateBalance(){
+  balance = Number(localStorage.getItem("balance"));
+  document.getElementById("balance").innerText = balance.toFixed(2);
+}
+
+function jump(){
+  if(!chicken.jumping && !paused){
+    chicken.vy = -15;
+    chicken.jumping = true;
+    jumpSound.play();
+  }
+}
+document.addEventListener("keydown", function(e){
+  if(e.code === "Space") jump();
+});
+
+function createBox(){
+  if(boxes.length > 0){
+    let lastBox = boxes[boxes.length-1];
+    if(lastBox.x > 280) return;
+  }
+  let value = (Math.random()*0.87 + 0.45).toFixed(2);
+  boxes.push({ x:400, y:230, value:Number(value), radius:20, vy:0 });
+}
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function drawBackground(){
+  skyOffset += 0.2;
+  let gradient = ctx.createLinearGradient(0,0,0,300);
+  let r = Math.floor(135 + 20*Math.sin(skyOffset/50));
+  let g = Math.floor(206 + 20*Math.sin(skyOffset/50));
+  let b = Math.floor(235 + 20*Math.sin(skyOffset/50));
+  gradient.addColorStop(0, `rgb(${r},${g},${b})`);
+  gradient.addColorStop(1, `rgb(70,195,206)`);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0,0,400,300);
+}
+
+function gameLoop(){
+  if(!paused){
+    drawBackground();
+
+    ctx.fillStyle = "#654321";
+    ctx.fillRect(0,250,400,50);
+
+    chicken.vy += gravity;
+    chicken.y += chicken.vy;
+    chicken.angle = chicken.vy / 20;
+    if(chicken.y > 200){ chicken.y = 200; chicken.vy = 0; chicken.jumping = false; chicken.angle=0;}
+
+    ctx.save();
+    ctx.translate(chicken.x + chicken.radius, chicken.y + chicken.radius);
+    ctx.rotate(chicken.angle);
+    ctx.beginPath();
+    ctx.arc(0, 0, chicken.radius, 0, 2*Math.PI);
+    ctx.fillStyle = "yellow";
+    ctx.fill();
+    ctx.closePath();
+    ctx.restore();
+
+    if(Math.random() < 0.02) createBox();
+
+    boxes.forEach((box,i)=>{
+      box.x -= speed;
+      box.vy += gravity;
+      box.y += box.vy;
+      if(box.y > 230) box.y = 230, box.vy = 0;
+
+      ctx.strokeStyle = "#FF0000AA";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(chicken.x+chicken.radius, chicken.y+chicken.radius);
+      ctx.lineTo(box.x, box.y);
+      ctx.stroke();
+      ctx.closePath();
+
+      let colorValue = Math.floor(255 - ((box.value-0.45)/0.87)*150); 
+      ctx.fillStyle = `rgb(${colorValue}, ${100+colorValue/2}, 0)`;
+      ctx.beginPath();
+      ctx.arc(box.x, box.y, box.radius, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.fillStyle = "white";
+      ctx.fillText(box.value.toFixed(2), box.x-10, box.y+5);
+
+      if(chicken.x + chicken.radius*2 > box.x - box.radius &&
+         chicken.x < box.x + box.radius &&
+         chicken.y + chicken.radius*2 >= box.y - box.radius &&
+         chicken.y <= box.y + box.radius){
+        balance *= box.value;
+        hitSound.play();
+        localStorage.setItem("balance", balance);
+        updateBalance();
+        box.vy = -10;
+        boxes.splice(i,1);
+      }
+    });
+
+    speed += 0.0005;
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+function togglePause(){ paused = !paused; }
+
+function withdraw(){
+  let amount = Number(document.getElementById("amount").value);
+  let wallet = document.getElementById("wallet").value.trim();
+  if(amount>0 && amount<=balance){
+    balance -= amount;
+    localStorage.setItem("balance", balance);
+    updateBalance();
+
+    const table = document.getElementById("historyTable");
+    const row = table.insertRow(-1);
+    const cellAmount = row.insertCell(0);
+    const cellWallet = row.insertCell(1);
+    const cellStatus = row.insertCell(2);
+    cellAmount.innerText = amount.toFixed(2);
+    cellWallet.innerText = wallet;
+    cellStatus.innerText = "Sent";
+    alert("تم السحب");
+  } else alert("رصيد غير كافي");
+}
+
+function copyAddress(){
+  navigator.clipboard.writeText("0xfc9782ab90f8667ffb38235ec8d527a543bfcdc2");
+  alert("تم نسخ العنوان");
+}
+</script>
+
+</body>
+</html>
